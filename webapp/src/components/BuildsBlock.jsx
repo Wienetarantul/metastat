@@ -8,7 +8,8 @@ const POS_LABEL = { 1: '1 Керри', 2: '2 Мид', 3: '3 Хард', 4: '4 Р�
 
 // Строка предмета: иконка, название, цифры из матчей и зачем он нужен
 function ItemRow({ item, info, total, showTime }) {
-  const share = Math.round((item.n / total) * 100);
+  // Предмет можно купить дважды (браслеты, тряпки), поэтому потолок — 100%
+  const share = Math.min(100, Math.round((item.n / total) * 100));
   return (
     <div className="item-row">
       {info?.img ? <img className="item-icon" src={info.img} alt="" loading="lazy" /> : <span className="item-icon" />}
@@ -52,7 +53,13 @@ export default function BuildsBlock({ heroId, rankTier, defaultPosition }) {
     return <p className="small muted">Для этого героя пока мало матчей в базе закупов. Обновим на следующей неделе.</p>;
   }
 
-  const total = group.matches;
+  // Оценка размера выборки: самый частый предмет из всех трёх списков
+  const total = Math.max(
+    group.matches,
+    ...group.start.map((i) => i.n),
+    ...group.boots.map((i) => i.n),
+    ...group.core.map((i) => i.n)
+  );
   return (
     <>
       {groups.positions.length > 1 && (
@@ -89,7 +96,7 @@ export default function BuildsBlock({ heroId, rankTier, defaultPosition }) {
       </div>
 
       <p className="small muted" style={{ margin: '8px 0 0' }}>
-        {total.toLocaleString('ru-RU')} {plural(total, 'матч', 'матча', 'матчей')} на {POS_LABEL[position].toLowerCase()} у группы «{BUILD_BRACKETS.find((b) => b.id === bracketId)?.name}». Данные STRATZ, обновлены {state.builds.updated}.
+        Выборка — около {total.toLocaleString('ru-RU')} {plural(total, 'матча', 'матчей', 'матчей')} на {POS_LABEL[position].toLowerCase()} у группы «{BUILD_BRACKETS.find((b) => b.id === bracketId)?.name}». Данные STRATZ, обновлены {state.builds.updated}.
       </p>
     </>
   );
