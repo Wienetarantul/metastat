@@ -98,6 +98,7 @@ export function getItems() {
           img: it.img ? CDN + it.img : null,
           cost: it.cost || 0,
           assembled: Array.isArray(it.components) && it.components.length > 0,
+          components: Array.isArray(it.components) ? it.components : null,
         });
       }
       return byId;
