@@ -158,5 +158,10 @@ for (const hero of list) {
 
 if (!only.length) {
   await writeFile(new URL('index.json', OUT_DIR), JSON.stringify({ updated: new Date().toISOString().slice(0, 10), heroes: index }));
+  // Отмечаем, по какому патчу собраны закупы — по нему решаем, пора ли пересобирать
+  const { currentPatch, savePatch } = await import('./check-patch.mjs');
+  const patch = await currentPatch();
+  await savePatch(patch);
+  console.log(`Отмечен патч ${patch.name}`);
 }
 console.log(`\nГотово: ${done} из ${list.length} героев -> webapp/public/builds/`);

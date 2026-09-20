@@ -1,9 +1,15 @@
-name: Обновить закупы из STRATZ
+name: Обновить закупы при новом патче
 
 on:
   schedule:
-    - cron: '0 5 * * 1'
+    # раз в сутки только проверяем номер патча — пересборка идёт, лишь если он сменился
+    - cron: '0 5 * * *'
   workflow_dispatch:
+    inputs:
+      force:
+        description: Пересобрать закупы, даже если патч не менялся
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -16,17 +22,29 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Собрать закупы
+
+      - name: Проверить патч
+        id: patch
+        run: node scripts/check-patch.mjs
+
+      - name: Собрать закупы заново
+        if: steps.patch.outputs.changed == 'true' || inputs.force
         env:
           STRATZ_TOKEN: ${{ secrets.STRATZ_TOKEN }}
         run: |
           printf 'STRATZ_TOKEN=%s\n' "$STRATZ_TOKEN" > .env
           node scripts/fetch-builds.mjs
           rm -f .env
+
       - name: Закоммитить изменения
+        if: steps.patch.outputs.changed == 'true' || inputs.force
         run: |
           git config user.name "MetaStat bot"
           git config user.email "actions@github.com"
           git add webapp/public/builds
-          git diff --staged --quiet || git commit -m "Еженедельное обновление закупов"
+          git diff --staged --quiet || git commit -m "Закупы пересобраны под патч ${{ steps.patch.outputs.patch }}"
           git push
+
+      - name: Патч не менялся
+        if: steps.patch.outputs.changed != 'true' && !inputs.force
+        run: echo "Патч ${{ steps.patch.outputs.patch }} тот же — ничего не пересобираем."
