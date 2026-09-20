@@ -174,6 +174,8 @@ export default function App() {
           onToggleFav={() => { haptic('light'); toggleFavorite(openHero.id); }}
           myStats={playerHeroes.find((h) => h.hero_id === openHero.id)}
           myGroup={myGroup}
+          rankTier={summary.data?.player?.rank_tier}
+          myPosition={myPosition}
           onClose={closeHero}
         />
       )}

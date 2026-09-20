@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { RANK_GROUPS, groupIcons, plural } from '../lib/ranks.js';
-import { getItemBuild } from '../lib/api.js';
 import { guideFor } from '../data/guides.js';
-import { ITEM_WHY } from '../data/items.js';
 import { tg } from '../lib/tg.js';
 import { IconClose, IconStar } from './Icons.jsx';
 import { PositionBadges, Difficulty } from './Pickers.jsx';
+import BuildsBlock from './BuildsBlock.jsx';
 
 const pct = (v) => (v == null ? '—' : `${v.toFixed(1)}%`);
 
@@ -25,47 +24,7 @@ function rankVerdict(hero) {
   return 'Процент побед почти не меняется от ранга: герой одинаково полезен и новичкам, и опытным игрокам.';
 }
 
-function BuildBlock({ heroId }) {
-  const [state, setState] = useState({ loading: true });
-  const [all, setAll] = useState(false);
-
-  useEffect(() => {
-    let alive = true;
-    getItemBuild(heroId)
-      .then((stages) => alive && setState({ stages }))
-      .catch(() => alive && setState({ error: 'Не удалось загрузить сборку.' }));
-    return () => { alive = false; };
-  }, [heroId]);
-
-  if (state.loading) return <div className="skeleton" style={{ height: 160 }} />;
-  if (state.error) return <div className="error">{state.error}</div>;
-  if (!state.stages.length) return <p className="small muted">Мало матчей для сборки.</p>;
-
-  const stages = all ? state.stages : state.stages.filter((s) => s.id === 'mid' || s.id === 'late');
-  return (
-    <>
-      {stages.map((stage) => (
-        <div key={stage.id} className="build-stage">
-          <div className="eyebrow" style={{ marginBottom: 4 }}>{stage.name}</div>
-          {stage.items.map((it) => (
-            <div key={it.key} className="item-row">
-              {it.img ? <img className="item-icon" src={it.img} alt="" loading="lazy" /> : <span className="item-icon" />}
-              <div className="col grow" style={{ gap: 2 }}>
-                <span style={{ fontWeight: 600, fontSize: 14 }}>{it.name}</span>
-                {ITEM_WHY[it.key] && <span className="small muted">{ITEM_WHY[it.key]}</span>}
-              </div>
-            </div>
-          ))}
-        </div>
-      ))}
-      <button className="more-btn" onClick={() => setAll(!all)}>
-        {all ? 'Только основные предметы' : 'Показать старт и раннюю игру'}
-      </button>
-    </>
-  );
-}
-
-export default function HeroSheet({ hero, isFav, onToggleFav, myStats, myGroup, onClose }) {
+export default function HeroSheet({ hero, isFav, onToggleFav, myStats, myGroup, rankTier, myPosition, onClose }) {
   const [style, setStyle] = useState('team');
   const [more, setMore] = useState(false);
 
@@ -170,9 +129,9 @@ export default function HeroSheet({ hero, isFav, onToggleFav, myStats, myGroup, 
           <div className="card">
             <div className="card-head">
               <h3 className="h2">Сборка и зачем</h3>
-              <span className="tag cyan">про-матчи</span>
+              <span className="tag cyan">по рангам</span>
             </div>
-            <BuildBlock heroId={hero.id} />
+            <BuildsBlock heroId={hero.id} rankTier={rankTier} defaultPosition={myPosition || guide?.p?.[0]} />
           </div>
 
           <div className="card">
